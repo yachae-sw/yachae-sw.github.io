@@ -1,3 +1,8 @@
+---
+layout: single
+title:  "실습 예제"
+---
+
 ```python
 # Trasfer Learning (전이학습)
 # 지금 우리는 직접 Convolutional Neural Network를 설계하면서 모델을 학습시켰습니다.
