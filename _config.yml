@@ -149,9 +149,9 @@ night_mode: "manual"
 header_pages:
   - about.md
   - archives.html
+  - post.html
   - categories.html
   - tags.html
-  - post.html
 
 # Page default value
 defaults:
