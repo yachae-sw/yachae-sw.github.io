@@ -6,14 +6,11 @@ title: About
 <h2>About</h2>
 
 <p>
-:art:&nbsp;Yet another theme for elegant writers with modern flat style
-and beautiful night mode.
+초보 개발자의 블로그입니다.
 </p>
+
+<h2>Education</h2>
 
 <p>
-Hey, nice to meet you, you found this Jekyll theme. Here the yet another
-theme is a modern theme, and it's quite clear, clean and neat for writers
-and posts.
+가톨릭관동대학교 의료공학과
 </p>
-
-## Test
