@@ -1,0 +1,830 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.1">Jekyll</generator><link href="https://yachae-sw.github.io//jekyll-theme-yat/feed.xml" rel="self" type="application/atom+xml" /><link href="https://yachae-sw.github.io//jekyll-theme-yat/" rel="alternate" type="text/html" /><updated>2023-01-10T15:10:07+00:00</updated><id>https://yachae-sw.github.io//jekyll-theme-yat/feed.xml</id><title type="html">yachae blog</title><subtitle>채성원의 블로그입니다. 의료 AI를 공부하는 블로그입니다</subtitle><author><name>Chae Seungwon</name></author><entry><title type="html">Pizza Steak Classification CNN Model</title><link href="https://yachae-sw.github.io//jekyll-theme-yat/ai/2023/01/10/Pizza-Steak-Classification-CNN-Model.html" rel="alternate" type="text/html" title="Pizza Steak Classification CNN Model" /><published>2023-01-10T00:00:00+00:00</published><updated>2023-01-10T00:00:00+00:00</updated><id>https://yachae-sw.github.io//jekyll-theme-yat/ai/2023/01/10/Pizza%20Steak%20Classification%20CNN%20Model</id><content type="html" xml:base="https://yachae-sw.github.io//jekyll-theme-yat/ai/2023/01/10/Pizza-Steak-Classification-CNN-Model.html"><![CDATA[<h2 id="pizza-steak-classification-cnn-model">Pizza Steak Classification CNN Model</h2>
+
+<h2 id="이미지-파일을-열고-탐색하기">이미지 파일을 열고 탐색하기</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="k">for</span> <span class="n">dirpath</span><span class="p">,</span> <span class="n">dirnames</span><span class="p">,</span> <span class="n">filenames</span> <span class="ow">in</span> <span class="n">os</span><span class="p">.</span><span class="n">walk</span><span class="p">(</span><span class="s">"pizza_steak"</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="s">"</span><span class="si">{</span><span class="n">dirpath</span><span class="si">}</span><span class="s">에는 </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">dirnames</span><span class="p">)</span><span class="si">}</span><span class="s">개 디렉토리와 </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">filenames</span><span class="p">)</span><span class="si">}</span><span class="s">개 파일이 존재합니다."</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pizza_steak에는 2개 디렉토리와 0개 파일이 존재합니다.
+pizza_steak\test에는 2개 디렉토리와 0개 파일이 존재합니다.
+pizza_steak\test\pizza에는 0개 디렉토리와 250개 파일이 존재합니다.
+pizza_steak\test\steak에는 0개 디렉토리와 250개 파일이 존재합니다.
+pizza_steak\train에는 2개 디렉토리와 0개 파일이 존재합니다.
+pizza_steak\train\pizza에는 0개 디렉토리와 750개 파일이 존재합니다.
+pizza_steak\train\steak에는 0개 디렉토리와 750개 파일이 존재합니다.
+</code></pre></div></div>
+
+<p>train data는 750개 test data는 250개</p>
+
+<ul>
+  <li>이미지 분류의 문제는 라벨링이 필요하다. 이미지를 분류하는 3가지 방법
+    <ol>
+      <li>라벨링에 사용할 라벨로 디렉토리를 생성하고 그 디렉토리에 해당하는 이미지를 넣기</li>
+      <li>라벨링에 사용하는 라벨의 규칙을 정해서 각 파일이름에 추가한다. 예) pizza_001.jpg, pizza_002.jpg</li>
+      <li>라벨링 정보를 가진 별도의 파일을 생성해서 목록을 정리한다. 이 목록을 분석해주는 로직이 필요하다.</li>
+    </ol>
+  </li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">pathlib</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib.image</span> <span class="k">as</span> <span class="n">mpimg</span>
+<span class="kn">import</span> <span class="nn">random</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 파일 내부에 있는 이미지를 렌덤으로 확인
+</span><span class="k">def</span> <span class="nf">view_random_image</span><span class="p">(</span><span class="n">target_dir</span><span class="p">,</span> <span class="n">target_class</span><span class="p">):</span>
+    <span class="n">target_folder</span> <span class="o">=</span> <span class="n">target_dir</span> <span class="o">+</span> <span class="n">target_class</span>
+    
+    <span class="n">random_image</span> <span class="o">=</span> <span class="n">random</span><span class="p">.</span><span class="n">sample</span><span class="p">(</span><span class="n">os</span><span class="p">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">target_folder</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+    
+    <span class="n">img</span> <span class="o">=</span> <span class="n">mpimg</span><span class="p">.</span><span class="n">imread</span><span class="p">(</span><span class="n">target_folder</span> <span class="o">+</span> <span class="s">"/"</span> <span class="o">+</span> <span class="n">random_image</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">plt</span><span class="p">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+    <span class="n">plt</span><span class="p">.</span><span class="n">title</span><span class="p">(</span><span class="n">target_class</span><span class="p">)</span>
+    <span class="n">plt</span><span class="p">.</span><span class="n">axis</span><span class="p">(</span><span class="s">"off"</span><span class="p">)</span>
+    
+    <span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="s">"Image shape: </span><span class="si">{</span><span class="n">img</span><span class="p">.</span><span class="n">shape</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+          
+    <span class="k">return</span> <span class="n">img</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">img</span> <span class="o">=</span> <span class="n">view_random_image</span><span class="p">(</span>
+    <span class="n">target_dir</span> <span class="o">=</span> <span class="s">"pizza_steak/train/"</span><span class="p">,</span>
+    <span class="n">target_class</span> <span class="o">=</span> <span class="s">"steak"</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Image shape: (512, 512, 3)
+</code></pre></div></div>
+
+<p><img src="https://user-images.githubusercontent.com/93850398/211528125-4cd55e49-108d-4fb2-b991-1aac043bc206.png" alt="output_7_1" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">img</span><span class="p">.</span><span class="n">shape</span> <span class="c1"># (Width, Height, Color Channel)
+</span></code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(512, 512, 3)
+</code></pre></div></div>
+
+<h2 id="이미지-데이터-스케일링">이미지 데이터 스케일링</h2>
+
+<p>CNN으로 학습을 진행하기 위해 학습 데이터를 0~1 사이의 값으로 스케일링을 한다. 전체 데이터를 255로 나누는 연산을 수행한다.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="n">tf</span>
+<span class="kn">from</span> <span class="nn">tensorflow.keras.preprocessing.image</span> <span class="kn">import</span> <span class="n">ImageDataGenerator</span>
+
+<span class="n">tf</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="n">train_datagen</span> <span class="o">=</span> <span class="n">ImageDataGenerator</span><span class="p">(</span><span class="n">rescale</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="mf">255.</span><span class="p">)</span>
+<span class="n">test_datagen</span> <span class="o">=</span> <span class="n">ImageDataGenerator</span><span class="p">(</span><span class="n">rescale</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="mf">255.</span><span class="p">)</span>
+
+<span class="n">train_dir</span> <span class="o">=</span> <span class="s">"pizza_steak/train/"</span>
+<span class="n">test_dir</span> <span class="o">=</span> <span class="s">"pizza_steak/test/"</span>
+
+<span class="n">train_data</span> <span class="o">=</span> <span class="n">train_datagen</span><span class="p">.</span><span class="n">flow_from_directory</span><span class="p">(</span>
+    <span class="n">train_dir</span><span class="p">,</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+    <span class="n">target_size</span> <span class="o">=</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
+    <span class="n">class_mode</span> <span class="o">=</span> <span class="s">"binary"</span> <span class="c1"># 두가지
+</span><span class="p">)</span>
+
+<span class="n">test_data</span> <span class="o">=</span> <span class="n">test_datagen</span><span class="p">.</span><span class="n">flow_from_directory</span><span class="p">(</span>
+    <span class="n">test_dir</span><span class="p">,</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+    <span class="n">target_size</span> <span class="o">=</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
+    <span class="n">class_mode</span> <span class="o">=</span> <span class="s">"binary"</span> <span class="c1"># 두가지
+</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Found 1500 images belonging to 2 classes.
+Found 500 images belonging to 2 classes.
+</code></pre></div></div>
+
+<h2 id="cnn-model_1">CNN Model_1</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">tf</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="n">model_1</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">models</span><span class="p">.</span><span class="n">Sequential</span><span class="p">([</span>
+    <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="n">filters</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">kernel_size</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">activation</span> <span class="o">=</span> <span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="n">filters</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">kernel_size</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">activation</span> <span class="o">=</span> <span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="n">MaxPool2D</span><span class="p">(</span><span class="n">pool_size</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span> <span class="s">"valid"</span><span class="p">),</span>
+    <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="n">filters</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">kernel_size</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">activation</span> <span class="o">=</span> <span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="n">filters</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">kernel_size</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">activation</span> <span class="o">=</span> <span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="n">MaxPool2D</span><span class="p">(</span><span class="n">pool_size</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span> <span class="s">"valid"</span><span class="p">),</span>
+    <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="n">Flatten</span><span class="p">(),</span>
+    <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">activation</span> <span class="o">=</span> <span class="s">"sigmoid"</span><span class="p">)</span>
+<span class="p">])</span>
+
+<span class="n">model_1</span><span class="p">.</span><span class="nb">compile</span><span class="p">(</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="s">"binary_crossentropy"</span><span class="p">,</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">optimizers</span><span class="p">.</span><span class="n">Adam</span><span class="p">(),</span>
+    <span class="n">metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s">"accuracy"</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">history_1</span> <span class="o">=</span> <span class="n">model_1</span><span class="p">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">train_data</span><span class="p">,</span>
+    <span class="n">epochs</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="n">validation_data</span> <span class="o">=</span> <span class="n">test_data</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Epoch 1/5
+47/47 [==============================] - 48s 989ms/step - loss: 0.6777 - accuracy: 0.6147 - val_loss: 0.5074 - val_accuracy: 0.7480
+Epoch 2/5
+47/47 [==============================] - 43s 917ms/step - loss: 0.5058 - accuracy: 0.7700 - val_loss: 0.4624 - val_accuracy: 0.8120
+Epoch 3/5
+47/47 [==============================] - 42s 889ms/step - loss: 0.4487 - accuracy: 0.7920 - val_loss: 0.4192 - val_accuracy: 0.8360
+Epoch 4/5
+47/47 [==============================] - 62s 1s/step - loss: 0.4350 - accuracy: 0.8000 - val_loss: 0.3975 - val_accuracy: 0.8360
+Epoch 5/5
+47/47 [==============================] - 49s 1s/step - loss: 0.4032 - accuracy: 0.8213 - val_loss: 0.3492 - val_accuracy: 0.8480
+</code></pre></div></div>
+
+<p>epoch  : 전체 데이터셋을 1번 학습하는 과정</p>
+<ul>
+  <li>예제의 경우 총 1500장을 학습하는 과정</li>
+</ul>
+
+<p>batch size</p>
+<ul>
+  <li>학습시 나누어서 학습할 이미지 개수</li>
+  <li>예제의 경우 학습할 때 32장씩 쪼개서 학습하겠다!</li>
+  <li>1500 / 32 = 46.875 (32장씩 쪼갠 47개 이미지 모임이 있다.)</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">model_1</span><span class="p">.</span><span class="n">summary</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ conv2d (Conv2D)             (None, None, None, 10)    280       
+                                                                 
+ conv2d_1 (Conv2D)           (None, None, None, 10)    910       
+                                                                 
+ max_pooling2d (MaxPooling2D  (None, None, None, 10)   0         
+ )                                                               
+                                                                 
+ conv2d_2 (Conv2D)           (None, None, None, 10)    910       
+                                                                 
+ conv2d_3 (Conv2D)           (None, None, None, 10)    910       
+                                                                 
+ max_pooling2d_1 (MaxPooling  (None, None, None, 10)   0         
+ 2D)                                                             
+                                                                 
+ flatten (Flatten)           (None, None)              0         
+                                                                 
+ dense (Dense)               (None, 1)                 28091     
+                                                                 
+=================================================================
+Total params: 31,101
+Trainable params: 31,101
+Non-trainable params: 0
+_________________________________________________________________
+</code></pre></div></div>
+
+<h2 id="cnn-model_2">CNN Model_2</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">tf</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="n">model_2</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">models</span><span class="p">.</span><span class="n">Sequential</span><span class="p">([</span>
+    <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="n">Flatten</span><span class="p">(</span><span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span>
+    <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">activation</span> <span class="o">=</span> <span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">activation</span> <span class="o">=</span> <span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">activation</span> <span class="o">=</span> <span class="s">"sigmoid"</span><span class="p">)</span>
+<span class="p">])</span>
+
+<span class="n">model_2</span><span class="p">.</span><span class="nb">compile</span><span class="p">(</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="s">"binary_crossentropy"</span><span class="p">,</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">optimizers</span><span class="p">.</span><span class="n">Adam</span><span class="p">(),</span>
+    <span class="n">metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s">"accuracy"</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">history_2</span> <span class="o">=</span> <span class="n">model_2</span><span class="p">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">train_data</span><span class="p">,</span>
+    <span class="n">epochs</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="n">validation_data</span> <span class="o">=</span> <span class="n">test_data</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Epoch 1/5
+47/47 [==============================] - 9s 175ms/step - loss: 0.6938 - accuracy: 0.4800 - val_loss: 0.6931 - val_accuracy: 0.5000
+Epoch 2/5
+47/47 [==============================] - 8s 179ms/step - loss: 0.6932 - accuracy: 0.4867 - val_loss: 0.6931 - val_accuracy: 0.5000
+Epoch 3/5
+47/47 [==============================] - 8s 175ms/step - loss: 0.6932 - accuracy: 0.4747 - val_loss: 0.6931 - val_accuracy: 0.5000
+Epoch 4/5
+47/47 [==============================] - 8s 181ms/step - loss: 0.6932 - accuracy: 0.5000 - val_loss: 0.6931 - val_accuracy: 0.5000
+Epoch 5/5
+47/47 [==============================] - 8s 178ms/step - loss: 0.6932 - accuracy: 0.4907 - val_loss: 0.6931 - val_accuracy: 0.5000
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">model_2</span><span class="p">.</span><span class="n">summary</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Model: "sequential_1"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ flatten_1 (Flatten)         (None, 150528)            0         
+                                                                 
+ dense_1 (Dense)             (None, 4)                 602116    
+                                                                 
+ dense_2 (Dense)             (None, 4)                 20        
+                                                                 
+ dense_3 (Dense)             (None, 1)                 5         
+                                                                 
+=================================================================
+Total params: 602,141
+Trainable params: 602,141
+Non-trainable params: 0
+_________________________________________________________________
+</code></pre></div></div>
+
+<ul>
+  <li>Trainable params는 모델이 데이터에서 학습할 수 있는 패턴을 말한다.</li>
+  <li>model_2 dense (밀집된) 계층은 모든 parameter들이 학습을 해야한다.</li>
+  <li>model_1 CNN (Convolutional Neural Network)의 경우에는 입력 데이터에서 가장 중요한 패턴을 학습한다.</li>
+  <li>따라서 model_1은 model_2에 비해 학습을 해야하는 parameter의 개수가 적다.</li>
+</ul>
+
+<h2 id="cnn-model_3">CNN Model_3</h2>
+
+<p>model_2를 개선 시키기 위해 모델의 complexity(복잡성)을 증가시켜야 한다.</p>
+<ol>
+  <li>게층을 추가한다.</li>
+  <li>계층을 이루는 neuron을 더 추가한다.</li>
+</ol>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 계층을 추가하는 방법
+</span><span class="n">tf</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="n">model_3</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">models</span><span class="p">.</span><span class="n">Sequential</span><span class="p">([</span>
+    <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="n">Flatten</span><span class="p">(</span><span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span>
+    <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">activation</span> <span class="o">=</span> <span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">activation</span> <span class="o">=</span> <span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">activation</span> <span class="o">=</span> <span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">layers</span><span class="p">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">activation</span> <span class="o">=</span> <span class="s">"sigmoid"</span><span class="p">)</span>
+<span class="p">])</span>
+
+<span class="n">model_3</span><span class="p">.</span><span class="nb">compile</span><span class="p">(</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="s">"binary_crossentropy"</span><span class="p">,</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="n">keras</span><span class="p">.</span><span class="n">optimizers</span><span class="p">.</span><span class="n">Adam</span><span class="p">(),</span>
+    <span class="n">metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s">"accuracy"</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">history_3</span> <span class="o">=</span> <span class="n">model_3</span><span class="p">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">train_data</span><span class="p">,</span>
+    <span class="n">epochs</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="n">validation_data</span> <span class="o">=</span> <span class="n">test_data</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Epoch 1/5
+47/47 [==============================] - 12s 248ms/step - loss: 2.9693 - accuracy: 0.6153 - val_loss: 0.8831 - val_accuracy: 0.7660
+Epoch 2/5
+47/47 [==============================] - 13s 284ms/step - loss: 1.2462 - accuracy: 0.6893 - val_loss: 0.9601 - val_accuracy: 0.6480
+Epoch 3/5
+47/47 [==============================] - 12s 261ms/step - loss: 0.6415 - accuracy: 0.7573 - val_loss: 0.4422 - val_accuracy: 0.7840
+Epoch 4/5
+47/47 [==============================] - 14s 289ms/step - loss: 0.5245 - accuracy: 0.7653 - val_loss: 0.4559 - val_accuracy: 0.7900
+Epoch 5/5
+47/47 [==============================] - 13s 286ms/step - loss: 0.5399 - accuracy: 0.7573 - val_loss: 0.4137 - val_accuracy: 0.8000
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">model_3</span><span class="p">.</span><span class="n">summary</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Model: "sequential_2"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ flatten_2 (Flatten)         (None, 150528)            0         
+                                                                 
+ dense_4 (Dense)             (None, 100)               15052900  
+                                                                 
+ dense_5 (Dense)             (None, 100)               10100     
+                                                                 
+ dense_6 (Dense)             (None, 100)               10100     
+                                                                 
+ dense_7 (Dense)             (None, 1)                 101       
+                                                                 
+=================================================================
+Total params: 15,073,201
+Trainable params: 15,073,201
+Non-trainable params: 0
+_________________________________________________________________
+</code></pre></div></div>
+
+<p>model_1 : 30,000 &lt; model_3 : 15,000,000</p>
+
+<h2 id="모델을-만드는-순서">모델을 만드는 순서</h2>
+
+<ol>
+  <li>데이터 불러오기,</li>
+  <li>데이터 전처리, batch에 맞게 준비, 이미지 rescale, resize</li>
+  <li>모델을 설계</li>
+  <li>모델을 학습</li>
+  <li>모델을 평가</li>
+  <li>모델을 개선 (하이퍼파라미터를 수정)</li>
+  <li>원하는 결과가 나올때 까지 계속 반복</li>
+</ol>
+
+<h2 id="cnn-model_4">CNN Model_4</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="n">tf</span>
+<span class="kn">from</span> <span class="nn">tensorflow.keras.optimizers</span> <span class="kn">import</span> <span class="n">Adam</span>
+<span class="kn">from</span> <span class="nn">tensorflow.keras.layers</span> <span class="kn">import</span> <span class="n">Dense</span><span class="p">,</span> <span class="n">Flatten</span><span class="p">,</span> <span class="n">Conv2D</span><span class="p">,</span> <span class="n">MaxPool2D</span><span class="p">,</span> <span class="n">Activation</span>
+<span class="kn">from</span> <span class="nn">tensorflow.keras</span> <span class="kn">import</span> <span class="n">Sequential</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">tf</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="n">model_4</span> <span class="o">=</span> <span class="n">Sequential</span><span class="p">([</span>
+    <span class="n">Conv2D</span><span class="p">(</span><span class="n">filters</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">kernel_size</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">strides</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">padding</span> <span class="o">=</span> <span class="s">"valid"</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">Conv2D</span><span class="p">(</span><span class="n">filters</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">kernel_size</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">strides</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">padding</span> <span class="o">=</span> <span class="s">"valid"</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">Conv2D</span><span class="p">(</span><span class="n">filters</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">kernel_size</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">strides</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">padding</span> <span class="o">=</span> <span class="s">"valid"</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">Flatten</span><span class="p">(),</span>
+    <span class="n">Dense</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">activation</span> <span class="o">=</span> <span class="s">"sigmoid"</span><span class="p">)</span>
+<span class="p">])</span>
+
+<span class="n">model_4</span><span class="p">.</span><span class="nb">compile</span><span class="p">(</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="s">"binary_crossentropy"</span><span class="p">,</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(),</span>
+    <span class="n">metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s">"accuracy"</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">history_4</span> <span class="o">=</span> <span class="n">model_4</span><span class="p">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">train_data</span><span class="p">,</span>
+    <span class="n">epochs</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="n">validation_data</span> <span class="o">=</span> <span class="n">test_data</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Epoch 1/5
+47/47 [==============================] - 47s 993ms/step - loss: 0.7639 - accuracy: 0.6600 - val_loss: 0.4472 - val_accuracy: 0.7860
+Epoch 2/5
+47/47 [==============================] - 71s 2s/step - loss: 0.4602 - accuracy: 0.7960 - val_loss: 0.3995 - val_accuracy: 0.8140
+Epoch 3/5
+47/47 [==============================] - 71s 1s/step - loss: 0.3622 - accuracy: 0.8420 - val_loss: 0.4012 - val_accuracy: 0.8120
+Epoch 4/5
+47/47 [==============================] - 50s 1s/step - loss: 0.2766 - accuracy: 0.8987 - val_loss: 0.4083 - val_accuracy: 0.8140
+Epoch 5/5
+47/47 [==============================] - 53s 1s/step - loss: 0.1569 - accuracy: 0.9520 - val_loss: 0.4748 - val_accuracy: 0.7900
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">model_4</span><span class="p">.</span><span class="n">summary</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Model: "sequential_3"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ conv2d_4 (Conv2D)           (None, None, None, 10)    280       
+                                                                 
+ conv2d_5 (Conv2D)           (None, None, None, 10)    910       
+                                                                 
+ conv2d_6 (Conv2D)           (None, None, None, 10)    910       
+                                                                 
+ flatten_3 (Flatten)         (None, None)              0         
+                                                                 
+ dense_8 (Dense)             (None, 1)                 475241    
+                                                                 
+=================================================================
+Total params: 477,341
+Trainable params: 477,341
+Non-trainable params: 0
+_________________________________________________________________
+</code></pre></div></div>
+
+<p>model_3 : 15,000,000 &gt; model_4 : 477,000</p>
+
+<h2 id="결과값-시각화">결과값 시각화</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="k">def</span> <span class="nf">plot_loss_curves</span><span class="p">(</span><span class="n">history</span><span class="p">):</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">history</span><span class="p">.</span><span class="n">history</span><span class="p">[</span><span class="s">"loss"</span><span class="p">]</span>
+    <span class="n">val_loss</span> <span class="o">=</span> <span class="n">history</span><span class="p">.</span><span class="n">history</span><span class="p">[</span><span class="s">"val_loss"</span><span class="p">]</span>
+    
+    <span class="n">accuracy</span> <span class="o">=</span> <span class="n">history</span><span class="p">.</span><span class="n">history</span><span class="p">[</span><span class="s">"accuracy"</span><span class="p">]</span>
+    <span class="n">val_accuracy</span> <span class="o">=</span> <span class="n">history</span><span class="p">.</span><span class="n">history</span><span class="p">[</span><span class="s">"val_accuracy"</span><span class="p">]</span>
+    
+    <span class="n">epochs</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">history</span><span class="p">.</span><span class="n">history</span><span class="p">[</span><span class="s">"loss"</span><span class="p">]))</span>
+    
+    <span class="n">plt</span><span class="p">.</span><span class="n">plot</span><span class="p">(</span><span class="n">epochs</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s">"Train Loss"</span><span class="p">)</span>
+    <span class="n">plt</span><span class="p">.</span><span class="n">plot</span><span class="p">(</span><span class="n">epochs</span><span class="p">,</span> <span class="n">val_loss</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s">"Validataion Loss"</span><span class="p">)</span>
+    <span class="n">plt</span><span class="p">.</span><span class="n">title</span><span class="p">(</span><span class="s">"Loss"</span><span class="p">)</span>
+    <span class="n">plt</span><span class="p">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">"Epochs"</span><span class="p">)</span>
+    <span class="n">plt</span><span class="p">.</span><span class="n">legend</span><span class="p">()</span>
+    
+    <span class="n">plt</span><span class="p">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">plt</span><span class="p">.</span><span class="n">plot</span><span class="p">(</span><span class="n">epochs</span><span class="p">,</span> <span class="n">accuracy</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s">"Train Accuracy"</span><span class="p">)</span>
+    <span class="n">plt</span><span class="p">.</span><span class="n">plot</span><span class="p">(</span><span class="n">epochs</span><span class="p">,</span> <span class="n">val_accuracy</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s">"Validataion Accuracy"</span><span class="p">)</span>
+    <span class="n">plt</span><span class="p">.</span><span class="n">title</span><span class="p">(</span><span class="s">"Accuracy"</span><span class="p">)</span>
+    <span class="n">plt</span><span class="p">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">"Epochs"</span><span class="p">)</span>
+    <span class="n">plt</span><span class="p">.</span><span class="n">legend</span><span class="p">()</span>    
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plot_loss_curves</span><span class="p">(</span><span class="n">history_4</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="https://user-images.githubusercontent.com/93850398/211528602-e4736c12-aaed-45b1-9bdb-0e5bd134c3a8.png" alt="output_34_0" /></p>
+
+<p><img src="https://user-images.githubusercontent.com/93850398/211528646-5bed12c4-2487-4610-a3ae-f708a9ffa876.png" alt="output_34_1" /></p>
+
+<h2 id="모델이-학습하는-과정">모델이 학습하는 과정</h2>
+
+<ol>
+  <li>시작을 할 수 있는 모델을 설계</li>
+  <li>모델을 학습하고 평가</li>
+  <li>오버피팅(과적합)일 경우 과적합을 줄이도록 한다(parameter를 조정하는 과정)
+    <ul>
+      <li>convolution 계층을 추가한다</li>
+      <li>convolution 계층의 필터의 갯수를 추가한다</li>
+      <li>dense을 추가해본다.</li>
+    </ul>
+  </li>
+</ol>
+
+<ul>
+  <li>일반적인 CNN 구조
+    <ul>
+      <li>입력 (input) -&gt; Conv + ReLU (non-linearities) -&gt; Pooling -&gt; Fully connected (Dense) (출력 / output)</li>
+      <li>model_4에서는 pooling을 사용하지 않았다</li>
+      <li>입력 (input) -&gt; Conv + ReLU (non-linearities) -&gt; Max Pooling -&gt; Fully connected (Dense) (출력 / output)</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="cnn-model_5">CNN Model_5</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">tf</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="n">model_5</span> <span class="o">=</span> <span class="n">Sequential</span><span class="p">([</span>
+    <span class="n">Conv2D</span><span class="p">(</span><span class="n">filters</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">kernel_size</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">strides</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">padding</span> <span class="o">=</span> <span class="s">"valid"</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">MaxPool2D</span><span class="p">(</span><span class="n">pool_size</span> <span class="o">=</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="n">Conv2D</span><span class="p">(</span><span class="n">filters</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">kernel_size</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">strides</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">padding</span> <span class="o">=</span> <span class="s">"valid"</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">MaxPool2D</span><span class="p">(</span><span class="n">pool_size</span> <span class="o">=</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="n">Conv2D</span><span class="p">(</span><span class="n">filters</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">kernel_size</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">strides</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">padding</span> <span class="o">=</span> <span class="s">"valid"</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">MaxPool2D</span><span class="p">(</span><span class="n">pool_size</span> <span class="o">=</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="n">Flatten</span><span class="p">(),</span>
+    <span class="n">Dense</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">activation</span> <span class="o">=</span> <span class="s">"sigmoid"</span><span class="p">)</span>
+<span class="p">])</span>
+
+<span class="n">model_5</span><span class="p">.</span><span class="nb">compile</span><span class="p">(</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="s">"binary_crossentropy"</span><span class="p">,</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(),</span>
+    <span class="n">metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s">"accuracy"</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">history_5</span> <span class="o">=</span> <span class="n">model_5</span><span class="p">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">train_data</span><span class="p">,</span>
+    <span class="n">epochs</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="n">validation_data</span> <span class="o">=</span> <span class="n">test_data</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Epoch 1/5
+47/47 [==============================] - 24s 494ms/step - loss: 0.6128 - accuracy: 0.6573 - val_loss: 0.4882 - val_accuracy: 0.7600
+Epoch 2/5
+47/47 [==============================] - 23s 490ms/step - loss: 0.4679 - accuracy: 0.7867 - val_loss: 0.4231 - val_accuracy: 0.8020
+Epoch 3/5
+47/47 [==============================] - 25s 521ms/step - loss: 0.4209 - accuracy: 0.8080 - val_loss: 0.3312 - val_accuracy: 0.8840
+Epoch 4/5
+47/47 [==============================] - 27s 579ms/step - loss: 0.3951 - accuracy: 0.8247 - val_loss: 0.3255 - val_accuracy: 0.8620
+Epoch 5/5
+47/47 [==============================] - 38s 812ms/step - loss: 0.3872 - accuracy: 0.8340 - val_loss: 0.3179 - val_accuracy: 0.8860
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">model_5</span><span class="p">.</span><span class="n">summary</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Model: "sequential_4"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ conv2d_7 (Conv2D)           (None, None, None, 10)    280       
+                                                                 
+ max_pooling2d_2 (MaxPooling  (None, None, None, 10)   0         
+ 2D)                                                             
+                                                                 
+ conv2d_8 (Conv2D)           (None, None, None, 10)    910       
+                                                                 
+ max_pooling2d_3 (MaxPooling  (None, None, None, 10)   0         
+ 2D)                                                             
+                                                                 
+ conv2d_9 (Conv2D)           (None, None, None, 10)    910       
+                                                                 
+ max_pooling2d_4 (MaxPooling  (None, None, None, 10)   0         
+ 2D)                                                             
+                                                                 
+ flatten_4 (Flatten)         (None, None)              0         
+                                                                 
+ dense_9 (Dense)             (None, 1)                 6761      
+                                                                 
+=================================================================
+Total params: 8,861
+Trainable params: 8,861
+Non-trainable params: 0
+_________________________________________________________________
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plot_loss_curves</span><span class="p">(</span><span class="n">history_5</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="https://user-images.githubusercontent.com/93850398/211528740-fd5e2024-6ed6-445d-b299-1f28b889c98e.png" alt="output_41_0" /></p>
+
+<p><img src="https://user-images.githubusercontent.com/93850398/211528810-a339f2f8-543a-492c-ae19-04d77d286c5f.png" alt="output_41_1" /></p>
+
+<ul>
+  <li>Conv2D 계층에서 filter 10개가 찾은 feature들을 찾아낸다.</li>
+  <li>MaxPooling2D: 가장 중요한 feature들만 선택하고, 나머지는 버립니다.</li>
+  <li>pool_size가 커질수록 버려지는(무시되는) feature들이 많아집니다. 기본 설정은(2, 2)이며 4개 값중에서 가장 높은 값을 선택합니다.</li>
+</ul>
+
+<h2 id="이미지-증강">이미지 증강</h2>
+
+<ul>
+  <li>data augmentaion : 학습 데이터를 변형하는 과정
+    <ul>
+      <li>1개 이미지에 대해서 좀더 다양한 이미지를 얻을 수 있다.</li>
+      <li>모델은 좀더 많은 데이터 학습을 하면서 일반적인 특징을 찾아간다.</li>
+      <li>overfitting (과적합)을 방지할 수 있다.</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">train_datagen_augmented</span> <span class="o">=</span> <span class="n">ImageDataGenerator</span><span class="p">(</span>
+    <span class="n">rescale</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="mf">255.</span><span class="p">,</span>
+    <span class="n">rotation_range</span><span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="n">shear_range</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+    <span class="n">zoom_range</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+    <span class="n">width_shift_range</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+    <span class="n">height_shift_range</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span>
+    <span class="n">horizontal_flip</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="p">)</span>
+
+<span class="n">train_data_augmented</span> <span class="o">=</span> <span class="n">train_datagen_augmented</span><span class="p">.</span><span class="n">flow_from_directory</span><span class="p">(</span>
+    <span class="n">train_dir</span><span class="p">,</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+    <span class="n">target_size</span> <span class="o">=</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
+    <span class="n">class_mode</span> <span class="o">=</span> <span class="s">"binary"</span><span class="p">,</span>
+    <span class="n">shuffle</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="p">)</span>
+
+<span class="n">train_data</span> <span class="o">=</span> <span class="n">train_datagen</span><span class="p">.</span><span class="n">flow_from_directory</span><span class="p">(</span>
+    <span class="n">train_dir</span><span class="p">,</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+    <span class="n">target_size</span> <span class="o">=</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
+    <span class="n">class_mode</span> <span class="o">=</span> <span class="s">"binary"</span><span class="p">,</span>
+    <span class="n">shuffle</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Found 1500 images belonging to 2 classes.
+Found 1500 images belonging to 2 classes.
+</code></pre></div></div>
+
+<h2 id="증강된-이미지-확인">증강된 이미지 확인</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">images</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">train_data</span><span class="p">.</span><span class="nb">next</span><span class="p">()</span> <span class="c1"># 32장씩 준비된 47개 덩어리에서 1개만 추출
+</span></code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">augmented_images</span><span class="p">,</span> <span class="n">augmented_labels</span> <span class="o">=</span> <span class="n">train_data_augmented</span><span class="p">.</span><span class="nb">next</span><span class="p">()</span> <span class="c1"># 32장씩 준비된 47개 덩어리에서 1개만 추출
+</span></code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">random_number</span> <span class="o">=</span> <span class="n">random</span><span class="p">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">images</span><span class="p">[</span><span class="n">random_number</span><span class="p">])</span>
+<span class="n">plt</span><span class="p">.</span><span class="n">title</span><span class="p">(</span><span class="s">"Original Image"</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="n">axis</span><span class="p">(</span><span class="bp">False</span><span class="p">),</span>
+<span class="n">plt</span><span class="p">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">plt</span><span class="p">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">augmented_images</span><span class="p">[</span><span class="n">random_number</span><span class="p">])</span>
+<span class="n">plt</span><span class="p">.</span><span class="n">title</span><span class="p">(</span><span class="s">"Augmented Image"</span><span class="p">)</span>
+<span class="n">plt</span><span class="p">.</span><span class="n">axis</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(-0.5, 223.5, 223.5, -0.5)
+</code></pre></div></div>
+
+<p><img src="https://user-images.githubusercontent.com/93850398/211528870-d5310e35-2f21-4d5e-9b95-616aeeb074fc.png" alt="output_49_1" /></p>
+
+<p><img src="https://user-images.githubusercontent.com/93850398/211528928-87224880-1110-4ff0-8bc1-f4e2240ce09d.png" alt="output_49_2" /></p>
+
+<h2 id="cnn-mmodel_6">CNN Mmodel_6</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">tf</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="n">model_6</span> <span class="o">=</span> <span class="n">Sequential</span><span class="p">([</span>
+    <span class="n">Conv2D</span><span class="p">(</span><span class="n">filters</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">kernel_size</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">strides</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">padding</span> <span class="o">=</span> <span class="s">"valid"</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">MaxPool2D</span><span class="p">(</span><span class="n">pool_size</span> <span class="o">=</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="n">Conv2D</span><span class="p">(</span><span class="n">filters</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">kernel_size</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">strides</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">padding</span> <span class="o">=</span> <span class="s">"valid"</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">MaxPool2D</span><span class="p">(</span><span class="n">pool_size</span> <span class="o">=</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="n">Conv2D</span><span class="p">(</span><span class="n">filters</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">kernel_size</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">strides</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">padding</span> <span class="o">=</span> <span class="s">"valid"</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">MaxPool2D</span><span class="p">(</span><span class="n">pool_size</span> <span class="o">=</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="n">Flatten</span><span class="p">(),</span>
+    <span class="n">Dense</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">activation</span> <span class="o">=</span> <span class="s">"sigmoid"</span><span class="p">)</span>
+<span class="p">])</span>
+
+<span class="n">model_6</span><span class="p">.</span><span class="nb">compile</span><span class="p">(</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="s">"binary_crossentropy"</span><span class="p">,</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(),</span>
+    <span class="n">metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s">"accuracy"</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">history_6</span> <span class="o">=</span> <span class="n">model_6</span><span class="p">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">train_data_augmented</span><span class="p">,</span>
+    <span class="n">epochs</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="n">validation_data</span> <span class="o">=</span> <span class="n">test_data</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Epoch 1/5
+47/47 [==============================] - 49s 1s/step - loss: 0.7375 - accuracy: 0.5313 - val_loss: 0.6767 - val_accuracy: 0.5040
+Epoch 2/5
+47/47 [==============================] - 54s 1s/step - loss: 0.6799 - accuracy: 0.6080 - val_loss: 0.6486 - val_accuracy: 0.6360
+Epoch 3/5
+47/47 [==============================] - 76s 2s/step - loss: 0.6666 - accuracy: 0.6087 - val_loss: 0.6463 - val_accuracy: 0.5640
+Epoch 4/5
+47/47 [==============================] - 51s 1s/step - loss: 0.6395 - accuracy: 0.6527 - val_loss: 0.5699 - val_accuracy: 0.6820
+Epoch 5/5
+47/47 [==============================] - 47s 1s/step - loss: 0.6185 - accuracy: 0.6773 - val_loss: 0.5636 - val_accuracy: 0.7180
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plot_loss_curves</span><span class="p">(</span><span class="n">history_6</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="https://user-images.githubusercontent.com/93850398/211529017-06cdf593-61c9-4c9b-a7e6-2a5cd84c5e15.png" alt="output_52_0" /></p>
+
+<p><img src="https://user-images.githubusercontent.com/93850398/211529058-da482169-89bd-4d62-9575-f7a8c290e542.png" alt="output_52_1" /></p>
+
+<h2 id="cnn-model_7">CNN Model_7</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">train_data_augmented</span> <span class="o">=</span> <span class="n">train_datagen_augmented</span><span class="p">.</span><span class="n">flow_from_directory</span><span class="p">(</span>
+    <span class="n">train_dir</span><span class="p">,</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+    <span class="n">target_size</span> <span class="o">=</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
+    <span class="n">class_mode</span> <span class="o">=</span> <span class="s">"binary"</span><span class="p">,</span>
+    <span class="n">shuffle</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="p">)</span>
+
+<span class="n">train_data</span> <span class="o">=</span> <span class="n">train_datagen</span><span class="p">.</span><span class="n">flow_from_directory</span><span class="p">(</span>
+    <span class="n">train_dir</span><span class="p">,</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+    <span class="n">target_size</span> <span class="o">=</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
+    <span class="n">class_mode</span> <span class="o">=</span> <span class="s">"binary"</span><span class="p">,</span>
+    <span class="n">shuffle</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Found 1500 images belonging to 2 classes.
+Found 1500 images belonging to 2 classes.
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">tf</span><span class="p">.</span><span class="n">random</span><span class="p">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="n">model_7</span> <span class="o">=</span> <span class="n">Sequential</span><span class="p">([</span>
+    <span class="n">Conv2D</span><span class="p">(</span><span class="n">filters</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">kernel_size</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">strides</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">padding</span> <span class="o">=</span> <span class="s">"valid"</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">MaxPool2D</span><span class="p">(</span><span class="n">pool_size</span> <span class="o">=</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="n">Conv2D</span><span class="p">(</span><span class="n">filters</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">kernel_size</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">strides</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">padding</span> <span class="o">=</span> <span class="s">"valid"</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">MaxPool2D</span><span class="p">(</span><span class="n">pool_size</span> <span class="o">=</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="n">Conv2D</span><span class="p">(</span><span class="n">filters</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">kernel_size</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">strides</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">padding</span> <span class="o">=</span> <span class="s">"valid"</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s">"relu"</span><span class="p">),</span>
+    <span class="n">MaxPool2D</span><span class="p">(</span><span class="n">pool_size</span> <span class="o">=</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="n">Flatten</span><span class="p">(),</span>
+    <span class="n">Dense</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">activation</span> <span class="o">=</span> <span class="s">"sigmoid"</span><span class="p">)</span>
+<span class="p">])</span>
+
+<span class="n">model_7</span><span class="p">.</span><span class="nb">compile</span><span class="p">(</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="s">"binary_crossentropy"</span><span class="p">,</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(),</span>
+    <span class="n">metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s">"accuracy"</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">history_7</span> <span class="o">=</span> <span class="n">model_7</span><span class="p">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">train_data_augmented</span><span class="p">,</span>
+    <span class="n">epochs</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="n">validation_data</span> <span class="o">=</span> <span class="n">test_data</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Epoch 1/5
+47/47 [==============================] - 44s 917ms/step - loss: 0.6727 - accuracy: 0.5673 - val_loss: 0.5770 - val_accuracy: 0.6980
+Epoch 2/5
+47/47 [==============================] - 47s 1s/step - loss: 0.5828 - accuracy: 0.7167 - val_loss: 0.4234 - val_accuracy: 0.8160
+Epoch 3/5
+47/47 [==============================] - 65s 1s/step - loss: 0.4979 - accuracy: 0.7647 - val_loss: 0.3576 - val_accuracy: 0.8420
+Epoch 4/5
+47/47 [==============================] - 46s 966ms/step - loss: 0.4857 - accuracy: 0.7667 - val_loss: 0.3412 - val_accuracy: 0.8720
+Epoch 5/5
+47/47 [==============================] - 42s 886ms/step - loss: 0.4687 - accuracy: 0.7800 - val_loss: 0.3417 - val_accuracy: 0.8720
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plot_loss_curves</span><span class="p">(</span><span class="n">history_7</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="https://user-images.githubusercontent.com/93850398/211529149-920b3406-c363-4cc0-9dca-cdd4ab72e469.png" alt="output_56_0" /></p>
+
+<p><img src="https://user-images.githubusercontent.com/93850398/211529183-ba91d588-9978-42a7-a428-116db5e3e2ff.png" alt="output_56_1" /></p>
+
+<h2 id="이미지-예측하기">이미지 예측하기</h2>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">load_and_prep_image</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">image_shape</span> <span class="o">=</span> <span class="mi">224</span><span class="p">):</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="n">io</span><span class="p">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="n">image</span><span class="p">.</span><span class="n">decode_image</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="n">image</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="p">[</span><span class="n">image_shape</span><span class="p">,</span> <span class="n">image_shape</span><span class="p">])</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">img</span> <span class="o">/</span> <span class="mf">255.</span>
+    <span class="k">return</span> <span class="n">img</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">steak</span> <span class="o">=</span> <span class="n">load_and_prep_image</span><span class="p">(</span><span class="s">"03-steak.jpeg"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>이미지를 스케일링하고 모델에 적용시키는 이미지의 차원과 예측을 할 때 모델에 적용시키는 이미지는 기존의 차원에 하나를 더해야 한다</p>
+<ul>
+  <li>기존의 이미지 스케일링 (244, 224, 3)</li>
+  <li>예측시 이미지 스케일링(None, 224, 224, 3) =&gt; (batch_size , 224, 224, 3)</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="s">"shape before new dimension: </span><span class="si">{</span><span class="n">steak</span><span class="p">.</span><span class="n">shape</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+
+<span class="n">steak</span> <span class="o">=</span> <span class="n">tf</span><span class="p">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">steak</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="s">"shape after new dimension: </span><span class="si">{</span><span class="n">steak</span><span class="p">.</span><span class="n">shape</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>shape before new dimension: (224, 224, 3)
+shape after new dimension: (1, 224, 224, 3)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">model_7</span><span class="p">.</span><span class="n">predict</span><span class="p">(</span><span class="n">steak</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1/1 [==============================] - 0s 146ms/step
+
+array([[0.92639554]], dtype=float32)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pred</span> <span class="o">=</span> <span class="n">model_7</span><span class="p">.</span><span class="n">predict</span><span class="p">(</span><span class="n">steak</span><span class="p">)</span>
+<span class="n">pred</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1/1 [==============================] - 0s 44ms/step
+
+array([[0.92639554]], dtype=float32)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># 결과값 출력
+</span><span class="n">class_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">"pizza"</span><span class="p">,</span> <span class="s">"steak"</span><span class="p">]</span>
+<span class="n">class_names</span>
+<span class="nb">int</span><span class="p">(</span><span class="n">tf</span><span class="p">.</span><span class="nb">round</span><span class="p">(</span><span class="n">pred</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]))</span>
+<span class="n">class_names</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">tf</span><span class="p">.</span><span class="nb">round</span><span class="p">(</span><span class="n">pred</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]))]</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>'steak'
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">pred_and_plot</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">class_name</span><span class="p">):</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">load_and_prep_image</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">pred</span> <span class="o">=</span> <span class="n">model</span><span class="p">.</span><span class="n">predict</span><span class="p">(</span><span class="n">tf</span><span class="p">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">pred_class</span> <span class="o">=</span> <span class="n">class_names</span><span class="p">[</span> <span class="nb">int</span><span class="p">(</span><span class="n">tf</span><span class="p">.</span><span class="nb">round</span><span class="p">(</span><span class="n">pred</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="p">]</span>
+    <span class="n">plt</span><span class="p">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+    <span class="n">plt</span><span class="p">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s">"Prediction: </span><span class="si">{</span><span class="n">pred_class</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+    <span class="n">plt</span><span class="p">.</span><span class="n">axis</span><span class="p">(</span><span class="bp">False</span><span class="p">);</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pred_and_plot</span><span class="p">(</span><span class="n">model_7</span><span class="p">,</span> <span class="s">"03-pizza-dad.jpeg"</span><span class="p">,</span> <span class="n">class_names</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1/1 [==============================] - 0s 39ms/step
+</code></pre></div></div>
+
+<p><img src="https://user-images.githubusercontent.com/93850398/211529249-0e20fe7a-d56f-40f5-b62e-334b3d43509f.png" alt="output_66_1" /></p>]]></content><author><name>Chae Seungwon</name></author><category term="AI" /><category term="AI" /><category term="CNN" /><summary type="html"><![CDATA[Pizza Steak Classification CNN Model]]></summary></entry><entry><title type="html">합성곱 신경망</title><link href="https://yachae-sw.github.io//jekyll-theme-yat/ai/2022/12/30/%ED%95%A9%EC%84%B1%EA%B3%B1-%EC%8B%A0%EA%B2%BD%EB%A7%9D.html" rel="alternate" type="text/html" title="합성곱 신경망" /><published>2022-12-30T00:00:00+00:00</published><updated>2022-12-30T00:00:00+00:00</updated><id>https://yachae-sw.github.io//jekyll-theme-yat/ai/2022/12/30/%ED%95%A9%EC%84%B1%EA%B3%B1%20%EC%8B%A0%EA%B2%BD%EB%A7%9D</id><content type="html" xml:base="https://yachae-sw.github.io//jekyll-theme-yat/ai/2022/12/30/%ED%95%A9%EC%84%B1%EA%B3%B1-%EC%8B%A0%EA%B2%BD%EB%A7%9D.html"><![CDATA[<h2 id="합성곱신경망">합성곱신경망</h2>
+
+<p>합성곱신경망(Convolutional Neural Network)은 인공신경망의 모델의 하나로 패턴을 찾아 이미지를 분석하는데 특화된 알고리즘이다.
+주요 구성은 합성곱연산과 폴링연산으로 나눌 수 있다.</p>
+
+<h3 id="합성곱">합성곱</h3>
+
+<p>합성곱(Convolution)은 원본 이미지와 영상의 패턴을 추출할 수 있는 필터(Filter)를 이용하여 특징을 추출하는 과정이다. 필터는 원본 이미지를 움직이면서(Stride) 이미지의 특징을 뽑아내는 결과물(Feature Map)을 만든다. 결과물(Feature Map)은 원본 이미지의 인접한 픽셀 간 <strong>연관성 있는 패턴 정보를 잃지 않고 반영</strong>할 수 있다.</p>
+
+<p>일반적인 인공신경망은 데이터를 입력층(Input Layer)에 일차원 행렬 형태로 입력한다. 이 경우, 비교적 단순한 구조의 데이터는 문제가 되지 않으나, 분석할 데이터가 이미지와 같이 <strong>공간적인 정보</strong>를 포함할 때 발생한다. 즉, 이미지 정보는 같은 의미를 갖고 있는 정보일지라도 일부분이 변경되는 경우 일차원 행렬의 관점에서 보면 데이터의 변화가 크기 때문에 일반적인 인공신경망에서는 <strong>학습 및 예측의 성능이 제한</strong>된다.</p>
+
+<h3 id="폴링">폴링</h3>
+
+<p>폴링(Pooling)은 합성곱 연산을 통해 나온 결과물에서 대푯값들만 뽑아내는 과정이다. 이미지 패턴 정보를 단순화, 추상화하는 작업으로 생각할 수 있다. 풀링의 종류에는 최대(Max), 최소(Min), 평균(Average) 등 여러 가지가 있는데, 일반적으로 최대 풀링(Max-Pooling)을 사용한다.</p>
+
+<h3 id="필터">필터</h3>
+
+<p>필터(Filter)는 원본 입력 데이터에 대해 <strong>특징값</strong>을 뽑기 위해 만들어진 장치이다. 원본이미지와 필터를 합성곱 연산을 시키면 다양한 특징, 혹은 관점으로 이미지를 인식할 수 있는 결과물이 나온다. 합성곱 신경망에서는 이 필터에 값들이 가중치로서 <strong>학습과정에서 데이터에 맞게 변경</strong>된다.</p>
+
+<h3 id="이미지-분류">이미지 분류</h3>
+
+<p>이미지 분류(Image Classification)는 필터(filter)로 합성곱 연산하여 특징맵(Feature Map)을 추출하고 풀링(Pooling)연산을 통해 대푯값들만 추출하게 된다. 이 과정을 여러 번 거쳐 <strong>생성된 수많은 특징맵(Feature Map)</strong>을 인공신경망의 <strong>분류 모델</strong>에 입력하여 특징맵(Feature Map)의 중요도를 정하는 가중치 조합을 찾아 숫자를 예측한다. 즉, 합성곱
+신경망(CNN) 분류 모델은 필터(Filter)행렬과 신경망의 가중치 조합을 학습데이터에 맞게 찾아 결과를 예측한다고 볼 수 있다.</p>
+
+<h3 id="이미지-분할">이미지 분할</h3>
+
+<p>이미지 분할(Image Segmetation)은 입력 이미지 정보로부터 관심영역(Region of Interest)을 찾기 위해서는 합성곱 연산을 이용해서 <strong>특정 패턴을 인식, 식별</strong>할 수 있어야 하고 동시에 식별된 부위의 위치정보를 <strong>복원(Reconstruction)</strong>할 수 있어야 한다. 일반적인 합성곱 신경망은 대푯값을 추출하는 풀링(Pooling) 연산을 통해 원본보다 크기가 작아지기
+때문에 각 부위를 식별하는 동시에 원본 크기의 이미지로 복원하여 부위별로 분할된 예측 결과를 보여주어야 한다.</p>]]></content><author><name>Chae Seungwon</name></author><category term="AI" /><category term="AI" /><summary type="html"><![CDATA[합성곱신경망]]></summary></entry></feed>
