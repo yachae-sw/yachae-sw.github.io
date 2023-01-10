@@ -1,14 +1,14 @@
 ---
 layout: post
 title: Pizza Steak Classification CNN Model
-subtitle: cnn
+subtitle: 기본 CNN 모델
 categories: AI
-tags: [AI, cnn]
+tags: [AI, CNN]
 ---
 
 ## Pizza Steak Classification CNN Model
 
-### pizza_steak파일을 열고 파일 탐색하기
+## pizza_steak파일을 열고 파일 탐색하기
 
 
 ```python
@@ -74,7 +74,7 @@ img = view_random_image(
 
 
     
-![png](images/output_7_1.png)
+![output_7_1](https://user-images.githubusercontent.com/93850398/211528125-4cd55e49-108d-4fb2-b991-1aac043bc206.png)
     
 
 
@@ -90,7 +90,7 @@ img.shape # (Width, Height, Color Channel)
 
 
 
-### 이미지 데이터 스케일링
+## 이미지 데이터 스케일링
 
 cnn으로 학습을 진행하기 위해 학습 데이터를 0~1 사이의 값으로 스케일링을 한다. 전체 데이터를 255로 나누는 연산을 수행한다.
 
@@ -347,7 +347,7 @@ model_3.summary()
     _________________________________________________________________
     
 
-model_1 : 30,000 <<< model_3 : 15,000,000
+model_1 : 30,000 < model_3 : 15,000,000
 
 ## 모델을 만드는 순서
 
@@ -432,7 +432,7 @@ model_4.summary()
     _________________________________________________________________
     
 
-model_3 : 15,000,000 >>> model_4 : 477,000
+model_3 : 15,000,000 > model_4 : 477,000
 
 ## 결과값 시각화 함수
 
@@ -469,13 +469,13 @@ plot_loss_curves(history_4)
 
 
     
-![png](output_34_0.png)
+![output_34_0](https://user-images.githubusercontent.com/93850398/211528602-e4736c12-aaed-45b1-9bdb-0e5bd134c3a8.png)
     
 
 
 
     
-![png](output_34_1.png)
+![output_34_1](https://user-images.githubusercontent.com/93850398/211528646-5bed12c4-2487-4610-a3ae-f708a9ffa876.png)
     
 
 
@@ -577,13 +577,13 @@ plot_loss_curves(history_5)
 
 
     
-![png](output_41_0.png)
+![output_41_0](https://user-images.githubusercontent.com/93850398/211528740-fd5e2024-6ed6-445d-b299-1f28b889c98e.png)
     
 
 
 
     
-![png](output_41_1.png)
+![output_41_1](https://user-images.githubusercontent.com/93850398/211528810-a339f2f8-543a-492c-ae19-04d77d286c5f.png)
     
 
 
@@ -631,7 +631,7 @@ train_data = train_datagen.flow_from_directory(
     Found 1500 images belonging to 2 classes.
     
 
-### 증강된 데이터 확인
+## 증강된 데이터 확인
 
 
 ```python
@@ -664,13 +664,13 @@ plt.axis(False)
 
 
     
-![png](output_49_1.png)
+![output_49_1](https://user-images.githubusercontent.com/93850398/211528870-d5310e35-2f21-4d5e-9b95-616aeeb074fc.png)
     
 
 
 
     
-![png](output_49_2.png)
+![output_49_2](https://user-images.githubusercontent.com/93850398/211528928-87224880-1110-4ff0-8bc1-f4e2240ce09d.png)
     
 
 
@@ -723,13 +723,13 @@ plot_loss_curves(history_6)
 
 
     
-![png](output_52_0.png)
+![output_52_0](https://user-images.githubusercontent.com/93850398/211529017-06cdf593-61c9-4c9b-a7e6-2a5cd84c5e15.png)
     
 
 
 
     
-![png](output_52_1.png)
+![output_52_1](https://user-images.githubusercontent.com/93850398/211529058-da482169-89bd-4d62-9575-f7a8c290e542.png)
     
 
 
@@ -805,13 +805,13 @@ plot_loss_curves(history_7)
 
 
     
-![png](output_56_0.png)
+![output_56_0](https://user-images.githubusercontent.com/93850398/211529149-920b3406-c363-4cc0-9dca-cdd4ab72e469.png)
     
 
 
 
     
-![png](output_56_1.png)
+![output_56_1](https://user-images.githubusercontent.com/93850398/211529183-ba91d588-9978-42a7-a428-116db5e3e2ff.png)
     
 
 
@@ -855,10 +855,6 @@ model_7.predict(steak)
 
     1/1 [==============================] - 0s 146ms/step
     
-
-
-
-
     array([[0.92639554]], dtype=float32)
 
 
@@ -871,10 +867,6 @@ pred
 
     1/1 [==============================] - 0s 44ms/step
     
-
-
-
-
     array([[0.92639554]], dtype=float32)
 
 
@@ -916,11 +908,6 @@ pred_and_plot(model_7, "03-pizza-dad.jpeg", class_names)
 
 
     
-![png](output_66_1.png)
+![output_66_1](https://user-images.githubusercontent.com/93850398/211529249-0e20fe7a-d56f-40f5-b62e-334b3d43509f.png)
     
 
-
-
-```python
-
-```
