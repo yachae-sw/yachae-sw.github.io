@@ -342,7 +342,6 @@ plot_loss_curves(history_2)
     
 
 
-
     
 ![output_24_1](https://user-images.githubusercontent.com/93850398/211586487-eacecf8e-15e7-4da3-b68a-7e8375972e46.png)
     
