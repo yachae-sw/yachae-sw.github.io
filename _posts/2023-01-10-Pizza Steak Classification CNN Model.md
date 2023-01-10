@@ -92,7 +92,7 @@ img.shape # (Width, Height, Color Channel)
 
 ## 이미지 데이터 스케일링
 
-cnn으로 학습을 진행하기 위해 학습 데이터를 0~1 사이의 값으로 스케일링을 한다. 전체 데이터를 255로 나누는 연산을 수행한다.
+CNN으로 학습을 진행하기 위해 학습 데이터를 0~1 사이의 값으로 스케일링을 한다. 전체 데이터를 255로 나누는 연산을 수행한다.
 
 
 ```python
@@ -126,7 +126,7 @@ test_data = test_datagen.flow_from_directory(
     Found 500 images belonging to 2 classes.
     
 
-## cnn model_1
+## CNN Model_1
 
 
 ```python
@@ -210,7 +210,7 @@ model_1.summary()
     _________________________________________________________________
     
 
-## cnn model_2
+## CNN Model_2
 
 
 ```python
@@ -277,7 +277,7 @@ model_2.summary()
 - model_1 CNN (Convolutional Neural Network)의 경우에는 입력 데이터에서 가장 중요한 패턴을 학습한다.
 - 따라서 model_1은 model_2에 비해 학습을 해야하는 parameter의 개수가 적다.
 
-## cnn model_3
+## CNN Model_3
 
 model_2를 개선 시키기 위해 모델의 complexity(복잡성)을 증가시켜야 한다.
 1. 게층을 추가한다.
@@ -359,7 +359,7 @@ model_1 : 30,000 < model_3 : 15,000,000
 6. 모델을 개선 (하이퍼파라미터를 수정)
 7. 원하는 결과가 나올때 까지 계속 반복
 
-## cnn model_4
+## CNN Model_4
 
 
 ```python
@@ -434,7 +434,7 @@ model_4.summary()
 
 model_3 : 15,000,000 > model_4 : 477,000
 
-## 결과값 시각화 함수
+## 결과값 시각화
 
 
 ```python
@@ -493,7 +493,7 @@ plot_loss_curves(history_4)
     - model_4에서는 pooling을 사용하지 않았다
     - 입력 (input) -> Conv + ReLU (non-linearities) -> Max Pooling -> Fully connected (Dense) (출력 / output)
 
-## cnn model_5
+## CNN Model_5
 
 
 ```python
@@ -591,7 +591,7 @@ plot_loss_curves(history_5)
 - MaxPooling2D: 가장 중요한 feature들만 선택하고, 나머지는 버립니다.
 - pool_size가 커질수록 버려지는(무시되는) feature들이 많아집니다. 기본 설정은(2, 2)이며 4개 값중에서 가장 높은 값을 선택합니다.
 
-## 데이터 증강
+## 이미지 증강
 
 - data augmentaion : 학습 데이터를 변형하는 과정
     - 1개 이미지에 대해서 좀더 다양한 이미지를 얻을 수 있다.
@@ -631,7 +631,7 @@ train_data = train_datagen.flow_from_directory(
     Found 1500 images belonging to 2 classes.
     
 
-## 증강된 데이터 확인
+## 증강된 이미지 확인
 
 
 ```python
@@ -674,7 +674,7 @@ plt.axis(False)
     
 
 
-## cnn model_6
+## CNN Mmodel_6
 
 
 ```python
@@ -733,7 +733,7 @@ plot_loss_curves(history_6)
     
 
 
-## cnn model_7
+## CNN Model_7
 
 
 ```python
