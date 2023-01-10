@@ -8,7 +8,7 @@ tags: [AI, CNN]
 
 ## Pizza Steak Classification CNN Model
 
-## pizza_steak파일을 열고 파일 탐색하기
+## 이미지 파일을 열고 탐색하기
 
 
 ```python
@@ -479,7 +479,7 @@ plot_loss_curves(history_4)
     
 
 
-## 만들어진 모델이 학습하는 과정
+## 모델이 학습하는 과정
 
 1. 시작을 할 수 있는 모델을 설계
 2. 모델을 학습하고 평가
