@@ -1,3 +1,11 @@
+---
+layout: post
+title: Multiclass Classification CNN Model
+subtitle: Multiclass CNN Model
+categories: AI
+tags: [AI, CNN]
+---
+
 ## Multiclass Classification CNN Model
 
 ## 이미지 파일을 열고 파일 탐색하기
