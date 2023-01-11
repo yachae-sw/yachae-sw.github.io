@@ -2,6 +2,7 @@
 .highlight table pre { margin: 0; }
 .hljs{
   color: #444444;
+  background-color: #d3d3d3;
 }
 .highlight .cp {
   color: #CC00A3;
