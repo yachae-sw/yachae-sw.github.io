@@ -171,7 +171,7 @@ test_data = test_datagen.flow_from_directory(
     Found 2500 images belonging to 10 classes.
     
 
-## CNN Model_1(multiclass classification)
+## CNN Model_1(multiclass)
 
 
 ```python
@@ -256,7 +256,7 @@ model_1.summary()
 
 현재 multiclass classification하는 모델은 과적합 (overfitting)상태이다.
 
-## CNN Model_2(multiclass classification)
+## CNN Model_2(multiclass)
 
 - 과적합을 극복하는 방법 = regularization (preventing overfitting)
     1. 더 많은 데이터를 학습시킨다.
@@ -347,7 +347,7 @@ plot_loss_curves(history_2)
     
 
 
-## CNN Model_3(multiclass classification)
+## CNN Model_3(multiclass)
 
 
 ```python
@@ -429,7 +429,7 @@ plot_loss_curves(history_3)
     
 
 
-## CNN Model_4(multiclass classification)
+## CNN Model_4(multiclass)
 
 
 ```python
