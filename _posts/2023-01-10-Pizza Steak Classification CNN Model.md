@@ -674,7 +674,7 @@ plt.axis(False)
     
 
 
-## CNN Mmodel_6
+## CNN Model_6
 
 
 ```python
