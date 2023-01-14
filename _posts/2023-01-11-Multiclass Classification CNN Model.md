@@ -3,7 +3,7 @@ layout: post
 title: Multiclass Classification CNN Model
 subtitle: Multiclass CNN Model
 categories: AI
-tags: [AI, CNN]
+tags: [AI, CNN, classification]
 ---
 
 ## Multiclass Classification CNN Model

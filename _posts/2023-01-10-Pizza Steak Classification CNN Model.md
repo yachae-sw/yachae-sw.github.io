@@ -3,7 +3,7 @@ layout: post
 title: Pizza Steak Classification CNN Model
 subtitle: Basic CNN Model
 categories: AI
-tags: [AI, CNN]
+tags: [AI, CNN, classification]
 ---
 
 ## Pizza Steak Classification CNN Model
