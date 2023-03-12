@@ -1,7 +1,7 @@
 ---
 layout: post
 title: tensorflow dataset에서 불러온 dataset을 tfrecord파일로 변환
-subtitle: dataset tfrecord파일로 변환하기
+subtitle: tfrecord파일
 categories: tfrecord
 tags: [tfrecord, tensorflow-dataset]
 ---
